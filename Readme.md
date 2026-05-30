@@ -32,7 +32,7 @@ Eval is a AI Platform that compares two short-form social media videos(`Youtube`
 
 ## Architecture and diagram
 
-![Architectural Diagram](https://drive.google.com/file/d/1SzxpkHd2m5DLbhT171JcLzJsE3P1Suxo/view?usp=sharing)
+![Architectural Diagram](/frontend/public/images/afd4d58a-5ab7-49f8-8f45-371c95d829e1%20(1).png)
 
 ## Tech Stack / Architecture
 

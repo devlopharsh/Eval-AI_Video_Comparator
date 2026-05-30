@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  YOUTUBE
+  INSTAGRAM
+}
+
+enum SessionStatus {
+  QUEUED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum JobStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+enum VideoSide {
+  A
+  B
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model Session {
+  id           String         @id @default(cuid())
+  status       SessionStatus  @default(QUEUED)
+  failureReason String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  videos       Video[]
+  jobs         IngestionJob[]
+  messages     ChatMessage[]
+}
+
+model IngestionJob {
+  id            String      @id @default(cuid())
+  queueJobId     String?     @unique
+  status        JobStatus   @default(QUEUED)
+  sessionId     String
+  payload       Json
+  failureReason String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  session       Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model Video {
+  id                String            @id @default(cuid())
+  sessionId         String
+  side              VideoSide
+  platform          Platform
+  sourceUrl         String
+  title             String
+  creator           String
+  followerCount     Int
+  views             Int
+  likes             Int
+  comments          Int
+  engagementRate    Decimal           @db.Decimal(5, 2)
+  uploadDate        DateTime
+  durationSeconds   Int
+  hashtags          String[]
+  transcript        String
+  transcriptSummary String
+  thumbnailUrl      String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  session           Session           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  chunks            TranscriptChunk[]
+
+  @@unique([sessionId, side])
+}
+
+model TranscriptChunk {
+  id             String   @id @default(cuid())
+  videoId         String
+  chunkIndex      Int
+  chunkKey        String
+  creator         String
+  platform        Platform
+  timestampStart  Int
+  timestampEnd    Int
+  text            String
+  embedding       Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  video           Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, chunkKey])
+}
+
+model ChatMessage {
+  id         String      @id @default(cuid())
+  sessionId  String
+  role       MessageRole
+  content    String
+  createdAt  DateTime    @default(now())
+  session    Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}

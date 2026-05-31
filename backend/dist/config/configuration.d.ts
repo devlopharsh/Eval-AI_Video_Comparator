@@ -8,6 +8,10 @@ export declare function configuration(): {
         collection: string;
         apiKey: string;
     };
+    youtubeDataApi: {
+        apiKey: string;
+        baseUrl: string;
+    };
     transcriptApi: {
         apiKey: string;
         baseUrl: string;

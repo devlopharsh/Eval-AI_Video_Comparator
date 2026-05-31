@@ -12,6 +12,10 @@ function configuration() {
             collection: process.env.QDRANT_COLLECTION ?? "transcript_chunks",
             apiKey: process.env.QDRANT_API_KEY ?? "",
         },
+        youtubeDataApi: {
+            apiKey: process.env.YOUTUBE_DATA_API_KEY ?? "",
+            baseUrl: process.env.YOUTUBE_DATA_API_BASE_URL ?? "https://www.googleapis.com/youtube/v3",
+        },
         transcriptApi: {
             apiKey: process.env.TRANSCRIPT_API_KEY ?? "",
             baseUrl: process.env.TRANSCRIPT_API_BASE_URL ?? "https://transcriptapi.com/api/v2",

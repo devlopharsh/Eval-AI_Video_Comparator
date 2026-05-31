@@ -12,7 +12,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - OpenAI-compatible embeddings are required for ingestion and retrieval
 - OpenAI-compatible chat generation is required for analysis responses
 - TranscriptAPI can be used as the primary YouTube transcript source in hosted deployments
-- optional `yt-dlp` cookie injection is supported for hosted deployments that hit YouTube bot checks
+- YouTube metadata is now fetched through the YouTube Data API instead of `yt-dlp`
 - chat routing, retrieval, context building, and generation are now separated into a workflow service
 - the workflow service now runs on the actual LangGraph JS runtime
 - controller-level tests cover ingest, video lookup, and chat streaming behavior
@@ -27,7 +27,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - Prisma schema for sessions, ingestion jobs, videos, transcript chunks, and chat messages
 - BullMQ worker that processes a comparison pair and stores normalized video/chunk data
 - provider services for:
-  - YouTube metadata plus transcript extraction, with TranscriptAPI as the preferred transcript source when configured
+  - YouTube metadata via the YouTube Data API plus transcript extraction via TranscriptAPI
   - Instagram metadata via `yt-dlp`
   - Whisper transcription for Reel audio when an OpenAI-compatible audio transcription endpoint is configured
 - transcript chunks are upserted into Qdrant during ingestion
@@ -65,31 +65,24 @@ The backend container will automatically:
 
 For hosted deployment platforms like Render, the Docker image now only starts the backend application itself. PostgreSQL, Redis, and Qdrant are expected to be external managed services referenced through environment variables.
 
-### Optional YouTube Cookies For Hosted Deployments
-
-If YouTube blocks anonymous `yt-dlp` extraction, you can inject a browser-exported `cookies.txt` file through an environment variable instead of mounting a file manually.
-
-1. Export a valid `cookies.txt` file from a browser profile you control.
-2. Base64-encode the full file contents.
-3. Set this env var in the hosted backend:
-
-```env
-YTDLP_COOKIES_B64=<base64-encoded-cookies.txt>
-```
-
-At container startup, the backend writes that content to a temporary file and sets `YTDLP_COOKIES_FILE` automatically for `yt-dlp`.
-
 ### Preferred YouTube Transcript Path
 
-If you have a TranscriptAPI key, set:
+If you have a TranscriptAPI key and a YouTube Data API key, set:
 
 ```env
+YOUTUBE_DATA_API_KEY=<your-youtube-data-api-key>
+YOUTUBE_DATA_API_BASE_URL=https://www.googleapis.com/youtube/v3
 TRANSCRIPT_API_KEY=<your-transcriptapi-key>
 TRANSCRIPT_API_BASE_URL=https://transcriptapi.com/api/v2
 YOUTUBE_TRANSCRIPT_PROVIDER=transcriptapi
 ```
 
-The backend will then use TranscriptAPI first for YouTube transcripts and only rely on `yt-dlp` when TranscriptAPI is not configured.
+The backend will then use:
+
+- YouTube Data API for YouTube metadata
+- TranscriptAPI for YouTube transcripts
+
+`yt-dlp` remains in the codebase only for Instagram ingestion.
 
 ## Local Non-Docker Run
 
@@ -143,7 +136,7 @@ Use one of the video IDs saved under the session.
 ## Current Limitations
 
 - Instagram ingestion still depends on external `yt-dlp` availability
-- YouTube metadata still depends on external `yt-dlp` availability, even when transcripts come from TranscriptAPI
+- YouTube ingestion now requires both a YouTube Data API key and a TranscriptAPI key
 - NVIDIA-compatible chat and embeddings activate automatically once `OPENAI_API_KEY` is present and pointed at `https://integrate.api.nvidia.com/v1`
 - transcription is still not wired to a NVIDIA-compatible ASR endpoint in this codebase
 - if metadata, transcript extraction, embeddings, or chat generation fail, the session now fails instead of substituting fake data

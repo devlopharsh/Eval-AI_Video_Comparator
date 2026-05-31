@@ -21,6 +21,7 @@ const openai_whisper_service_1 = require("./openai-whisper.service");
 const transcript_api_service_1 = require("./transcript-api.service");
 const transcript_chunker_service_1 = require("./transcript-chunker.service");
 const video_ingestion_service_1 = require("./video-ingestion.service");
+const youtube_data_api_service_1 = require("./youtube-data-api.service");
 const youtube_provider_service_1 = require("./youtube-provider.service");
 let IngestionModule = class IngestionModule {
 };
@@ -35,6 +36,7 @@ exports.IngestionModule = IngestionModule = __decorate([
             ingestion_shell_service_1.IngestionShellService,
             openai_whisper_service_1.OpenAiWhisperService,
             transcript_api_service_1.TranscriptApiService,
+            youtube_data_api_service_1.YoutubeDataApiService,
             youtube_provider_service_1.YoutubeProviderService,
             instagram_provider_service_1.InstagramProviderService,
             video_ingestion_service_1.VideoIngestionService,

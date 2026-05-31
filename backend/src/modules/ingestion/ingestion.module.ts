@@ -12,6 +12,7 @@ import { OpenAiWhisperService } from "./openai-whisper.service";
 import { TranscriptApiService } from "./transcript-api.service";
 import { TranscriptChunkerService } from "./transcript-chunker.service";
 import { VideoIngestionService } from "./video-ingestion.service";
+import { YoutubeDataApiService } from "./youtube-data-api.service";
 import { YoutubeProviderService } from "./youtube-provider.service";
 
 @Module({
@@ -23,6 +24,7 @@ import { YoutubeProviderService } from "./youtube-provider.service";
     IngestionShellService,
     OpenAiWhisperService,
     TranscriptApiService,
+    YoutubeDataApiService,
     YoutubeProviderService,
     InstagramProviderService,
     VideoIngestionService,

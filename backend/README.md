@@ -36,15 +36,43 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - targeted workflow tests now cover metadata routing and retrieval routing behavior
 - session status payloads now expose pipeline progress, latest job status, and persisted message restoration data
 
-## Local Run
+## Docker Run
 
 1. Copy `.env.example` to `.env`.
-2. Start infrastructure with `docker compose up -d`.
-3. Install dependencies with `pnpm install`.
-4. Generate Prisma client with `pnpm prisma:generate`.
-5. Run migrations with `pnpm prisma:migrate`.
-6. Start the backend with `pnpm dev`.
-7. Run workflow tests with `pnpm test`.
+2. Set the provider keys you actually need in `.env`.
+3. Start the full backend stack:
+
+```powershell
+docker compose up --build
+```
+
+That single command now starts:
+
+- PostgreSQL
+- Redis
+- Qdrant
+- the NestJS backend container
+
+The backend container will automatically:
+
+- install Node dependencies during image build
+- install `yt-dlp`, Python, and `ffmpeg`
+- generate the Prisma client
+- wait for PostgreSQL, Redis, and Qdrant
+- apply Prisma migrations with `prisma migrate deploy`
+- build the backend
+- start `dist/main.js`
+
+## Local Non-Docker Run
+
+If you still want to run it manually outside Docker:
+
+1. Start infrastructure with `docker compose up -d postgres redis qdrant`.
+2. Install dependencies with `pnpm install`.
+3. Generate Prisma client with `pnpm prisma:generate`.
+4. Run migrations with `pnpm prisma:migrate`.
+5. Start the backend with `pnpm dev`.
+6. Run workflow tests with `pnpm test`.
 
 Default server URL: `http://localhost:4000`
 

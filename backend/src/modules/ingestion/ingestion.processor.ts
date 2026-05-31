@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { Job } from "bullmq";
+import { Job, UnrecoverableError } from "bullmq";
 import { JobStatus, SessionStatus } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { QdrantService } from "../qdrant/qdrant.service";
@@ -156,13 +156,14 @@ export class IngestionProcessor extends WorkerHost {
       this.logger.log(`Completed ingestion for session ${sessionId}.`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown ingestion error.";
+      const failureReason = this.normalizeFailureReason(message);
       this.logger.error(message);
 
       await this.prisma.ingestionJob.updateMany({
         where: { sessionId, queueJobId: job.id?.toString() },
         data: {
           status: JobStatus.FAILED,
-          failureReason: message,
+          failureReason,
         },
       });
 
@@ -170,9 +171,13 @@ export class IngestionProcessor extends WorkerHost {
         where: { id: sessionId },
         data: {
           status: SessionStatus.FAILED,
-          failureReason: message,
+          failureReason,
         },
       });
+
+      if (this.isUnrecoverableFailure(message)) {
+        throw new UnrecoverableError(failureReason);
+      }
 
       throw error;
     }
@@ -184,5 +189,40 @@ export class IngestionProcessor extends WorkerHost {
     }
 
     return Number((((likes + comments) / views) * 100).toFixed(2));
+  }
+
+  private isUnrecoverableFailure(message: string) {
+    return (
+      message.includes("HTTP 429") ||
+      message.includes("rate-limited") ||
+      message.includes("yt-dlp is required") ||
+      message.includes("Embedding provider is not configured") ||
+      message.includes("Chat generation provider is not configured") ||
+      message.includes("Transcription provider is not configured")
+    );
+  }
+
+  private normalizeFailureReason(message: string) {
+    if (message.includes("HTTP 429") || message.includes("rate-limited")) {
+      return "YouTube rate-limited subtitle retrieval for this video. Retry later, use a different network, or test another URL.";
+    }
+
+    if (message.includes("yt-dlp is required")) {
+      return "yt-dlp is not available to the backend process. Install it and ensure it is on PATH.";
+    }
+
+    if (message.includes("Embedding provider is not configured")) {
+      return "Embeddings are not configured. Set OPENAI_API_KEY before running ingestion.";
+    }
+
+    if (message.includes("Chat generation provider is not configured")) {
+      return "Chat generation is not configured. Set OPENAI_API_KEY before using analysis chat.";
+    }
+
+    if (message.includes("Transcription provider is not configured")) {
+      return "Audio transcription is not configured for this backend. Configure a supported transcription provider.";
+    }
+
+    return message;
   }
 }

@@ -14,4 +14,6 @@ export declare class IngestionProcessor extends WorkerHost {
     constructor(prisma: PrismaService, chunker: TranscriptChunkerService, videoIngestionService: VideoIngestionService, qdrantService: QdrantService);
     process(job: Job<IngestionPayload>): Promise<void>;
     private calculateEngagement;
+    private isUnrecoverableFailure;
+    private normalizeFailureReason;
 }

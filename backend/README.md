@@ -46,7 +46,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 docker compose up --build
 ```
 
-That single command now starts:
+For local development, that single command now starts:
 
 - PostgreSQL
 - Redis
@@ -58,10 +58,10 @@ The backend container will automatically:
 - install Node dependencies during image build
 - install `yt-dlp`, Python, and `ffmpeg`
 - generate the Prisma client
-- wait for PostgreSQL, Redis, and Qdrant
 - apply Prisma migrations with `prisma migrate deploy`
-- build the backend
 - start `dist/main.js`
+
+For hosted deployment platforms like Render, the Docker image now only starts the backend application itself. PostgreSQL, Redis, and Qdrant are expected to be external managed services referenced through environment variables.
 
 ## Local Non-Docker Run
 

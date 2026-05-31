@@ -11,12 +11,10 @@ RUN apt-get update \
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm ci
-RUN npx prisma generate
 
 COPY . .
-
-RUN chmod +x ./scripts/docker-start.sh
+RUN npm run build
 
 EXPOSE 4000
 
-CMD ["./scripts/docker-start.sh"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]

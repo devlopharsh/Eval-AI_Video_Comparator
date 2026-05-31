@@ -9,9 +9,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci
-
 COPY prisma ./prisma
+RUN npm ci
 RUN npx prisma generate
 
 COPY . .

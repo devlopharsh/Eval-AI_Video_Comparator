@@ -14,7 +14,8 @@ RUN npm ci
 
 COPY . .
 RUN npm run build
+RUN chmod +x ./scripts/render-start.sh
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["./scripts/render-start.sh"]

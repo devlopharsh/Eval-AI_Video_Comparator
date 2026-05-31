@@ -11,6 +11,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - Qdrant collection bootstrap, upsert, and search wiring is now implemented
 - OpenAI-compatible embeddings are required for ingestion and retrieval
 - OpenAI-compatible chat generation is required for analysis responses
+- optional `yt-dlp` cookie injection is supported for hosted deployments that hit YouTube bot checks
 - chat routing, retrieval, context building, and generation are now separated into a workflow service
 - the workflow service now runs on the actual LangGraph JS runtime
 - controller-level tests cover ingest, video lookup, and chat streaming behavior
@@ -62,6 +63,20 @@ The backend container will automatically:
 - start `dist/main.js`
 
 For hosted deployment platforms like Render, the Docker image now only starts the backend application itself. PostgreSQL, Redis, and Qdrant are expected to be external managed services referenced through environment variables.
+
+### Optional YouTube Cookies For Hosted Deployments
+
+If YouTube blocks anonymous `yt-dlp` extraction, you can inject a browser-exported `cookies.txt` file through an environment variable instead of mounting a file manually.
+
+1. Export a valid `cookies.txt` file from a browser profile you control.
+2. Base64-encode the full file contents.
+3. Set this env var in the hosted backend:
+
+```env
+YTDLP_COOKIES_B64=<base64-encoded-cookies.txt>
+```
+
+At container startup, the backend writes that content to a temporary file and sets `YTDLP_COOKIES_FILE` automatically for `yt-dlp`.
 
 ## Local Non-Docker Run
 

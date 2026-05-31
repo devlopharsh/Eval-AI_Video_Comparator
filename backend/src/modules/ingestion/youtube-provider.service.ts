@@ -55,7 +55,11 @@ export class YoutubeProviderService {
     }
 
     try {
-      const { stdout } = await this.shellService.run("yt-dlp", ["--dump-single-json", url], 120000);
+      const { stdout } = await this.shellService.run(
+        "yt-dlp",
+        [...this.buildYtDlpBaseArgs(), "--dump-single-json", url],
+        120000,
+      );
       const payload = JSON.parse(stdout) as {
         title?: string;
         uploader?: string;
@@ -90,6 +94,11 @@ export class YoutubeProviderService {
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown error";
       this.logger.error(`yt-dlp metadata fetch failed for YouTube: ${message}`);
+      if (message.includes("Sign in to confirm you're not a bot")) {
+        throw new Error(
+          "YouTube blocked anonymous metadata extraction for this video. Configure yt-dlp cookies or test a different video/network.",
+        );
+      }
       throw error instanceof Error ? error : new Error(message);
     }
   }
@@ -104,10 +113,7 @@ export class YoutubeProviderService {
 
     try {
       await this.shellService.run("yt-dlp", [
-        "--js-runtimes",
-        "node",
-        "--remote-components",
-        "ejs:github",
+        ...this.buildYtDlpBaseArgs(),
         "--skip-download",
         "--write-auto-subs",
         "--write-subs",
@@ -139,6 +145,11 @@ export class YoutubeProviderService {
       if (message.includes("HTTP Error 429")) {
         throw new Error(
           "YouTube subtitle retrieval was rate-limited (HTTP 429). Retry later or test another video/network.",
+        );
+      }
+      if (message.includes("Sign in to confirm you're not a bot")) {
+        throw new Error(
+          "YouTube blocked anonymous subtitle retrieval for this video. Configure yt-dlp cookies or test a different video/network.",
         );
       }
       throw error instanceof Error ? error : new Error(message);
@@ -194,5 +205,16 @@ export class YoutubeProviderService {
     }
 
     return deduped.join(" ").replace(/\s+/g, " ").trim();
+  }
+
+  private buildYtDlpBaseArgs() {
+    const args = ["--js-runtimes", "node", "--remote-components", "ejs:github"];
+    const cookiesPath = process.env.YTDLP_COOKIES_FILE?.trim();
+
+    if (cookiesPath) {
+      args.push("--cookies", cookiesPath);
+    }
+
+    return args;
   }
 }

@@ -195,6 +195,8 @@ export class IngestionProcessor extends WorkerHost {
     return (
       message.includes("HTTP 429") ||
       message.includes("rate-limited") ||
+      message.includes("blocked anonymous") ||
+      message.includes("not a bot") ||
       message.includes("yt-dlp is required") ||
       message.includes("Embedding provider is not configured") ||
       message.includes("Chat generation provider is not configured") ||
@@ -205,6 +207,10 @@ export class IngestionProcessor extends WorkerHost {
   private normalizeFailureReason(message: string) {
     if (message.includes("HTTP 429") || message.includes("rate-limited")) {
       return "YouTube rate-limited subtitle retrieval for this video. Retry later, use a different network, or test another URL.";
+    }
+
+    if (message.includes("blocked anonymous") || message.includes("not a bot")) {
+      return "YouTube blocked anonymous access for this video. Provide yt-dlp cookies or test a different video/network.";
     }
 
     if (message.includes("yt-dlp is required")) {

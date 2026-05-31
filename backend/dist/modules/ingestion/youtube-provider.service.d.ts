@@ -9,4 +9,5 @@ export declare class YoutubeProviderService {
     private loadTranscriptWithYtDlp;
     private parseUploadDate;
     private extractTranscriptFromVtt;
+    private buildYtDlpBaseArgs;
 }

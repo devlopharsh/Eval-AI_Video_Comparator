@@ -12,19 +12,23 @@ var YoutubeProviderService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.YoutubeProviderService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const promises_1 = require("node:fs/promises");
 const node_path_1 = require("node:path");
 const node_os_1 = require("node:os");
 const ingestion_utils_1 = require("./ingestion.utils");
 const ingestion_shell_service_1 = require("./ingestion-shell.service");
+const transcript_api_service_1 = require("./transcript-api.service");
 let YoutubeProviderService = YoutubeProviderService_1 = class YoutubeProviderService {
-    constructor(shellService) {
+    constructor(shellService, transcriptApiService, configService) {
         this.shellService = shellService;
+        this.transcriptApiService = transcriptApiService;
+        this.configService = configService;
         this.logger = new common_1.Logger(YoutubeProviderService_1.name);
     }
     async buildSeed(url, side) {
         const metadata = await this.loadMetadata(url);
-        const transcript = await this.loadTranscriptWithYtDlp(url);
+        const transcript = await this.loadTranscript(url);
         return {
             side,
             platform: "YOUTUBE",
@@ -73,6 +77,24 @@ let YoutubeProviderService = YoutubeProviderService_1 = class YoutubeProviderSer
             if (message.includes("Sign in to confirm you're not a bot")) {
                 throw new Error("YouTube blocked anonymous metadata extraction for this video. Configure yt-dlp cookies or test a different video/network.");
             }
+            throw error instanceof Error ? error : new Error(message);
+        }
+    }
+    async loadTranscript(url) {
+        const configuredProvider = (this.configService.get("providers.youtubeTranscript") ?? "").trim().toLowerCase();
+        if (configuredProvider === "transcriptapi" || this.transcriptApiService.isConfigured()) {
+            return this.loadTranscriptWithTranscriptApi(url);
+        }
+        return this.loadTranscriptWithYtDlp(url);
+    }
+    async loadTranscriptWithTranscriptApi(url) {
+        try {
+            const result = await this.transcriptApiService.fetchYoutubeTranscript(url);
+            return result.transcript;
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "unknown error";
+            this.logger.error(`TranscriptAPI transcript fetch failed for YouTube: ${message}`);
             throw error instanceof Error ? error : new Error(message);
         }
     }
@@ -174,5 +196,7 @@ let YoutubeProviderService = YoutubeProviderService_1 = class YoutubeProviderSer
 exports.YoutubeProviderService = YoutubeProviderService;
 exports.YoutubeProviderService = YoutubeProviderService = YoutubeProviderService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [ingestion_shell_service_1.IngestionShellService])
+    __metadata("design:paramtypes", [ingestion_shell_service_1.IngestionShellService,
+        transcript_api_service_1.TranscriptApiService,
+        config_1.ConfigService])
 ], YoutubeProviderService);

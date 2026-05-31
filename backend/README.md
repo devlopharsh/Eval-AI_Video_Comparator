@@ -11,6 +11,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - Qdrant collection bootstrap, upsert, and search wiring is now implemented
 - OpenAI-compatible embeddings are required for ingestion and retrieval
 - OpenAI-compatible chat generation is required for analysis responses
+- TranscriptAPI can be used as the primary YouTube transcript source in hosted deployments
 - optional `yt-dlp` cookie injection is supported for hosted deployments that hit YouTube bot checks
 - chat routing, retrieval, context building, and generation are now separated into a workflow service
 - the workflow service now runs on the actual LangGraph JS runtime
@@ -26,7 +27,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - Prisma schema for sessions, ingestion jobs, videos, transcript chunks, and chat messages
 - BullMQ worker that processes a comparison pair and stores normalized video/chunk data
 - provider services for:
-  - YouTube metadata plus transcript extraction
+  - YouTube metadata plus transcript extraction, with TranscriptAPI as the preferred transcript source when configured
   - Instagram metadata via `yt-dlp`
   - Whisper transcription for Reel audio when an OpenAI-compatible audio transcription endpoint is configured
 - transcript chunks are upserted into Qdrant during ingestion
@@ -77,6 +78,18 @@ YTDLP_COOKIES_B64=<base64-encoded-cookies.txt>
 ```
 
 At container startup, the backend writes that content to a temporary file and sets `YTDLP_COOKIES_FILE` automatically for `yt-dlp`.
+
+### Preferred YouTube Transcript Path
+
+If you have a TranscriptAPI key, set:
+
+```env
+TRANSCRIPT_API_KEY=<your-transcriptapi-key>
+TRANSCRIPT_API_BASE_URL=https://transcriptapi.com/api/v2
+YOUTUBE_TRANSCRIPT_PROVIDER=transcriptapi
+```
+
+The backend will then use TranscriptAPI first for YouTube transcripts and only rely on `yt-dlp` when TranscriptAPI is not configured.
 
 ## Local Non-Docker Run
 
@@ -130,6 +143,7 @@ Use one of the video IDs saved under the session.
 ## Current Limitations
 
 - Instagram ingestion still depends on external `yt-dlp` availability
+- YouTube metadata still depends on external `yt-dlp` availability, even when transcripts come from TranscriptAPI
 - NVIDIA-compatible chat and embeddings activate automatically once `OPENAI_API_KEY` is present and pointed at `https://integrate.api.nvidia.com/v1`
 - transcription is still not wired to a NVIDIA-compatible ASR endpoint in this codebase
 - if metadata, transcript extraction, embeddings, or chat generation fail, the session now fails instead of substituting fake data

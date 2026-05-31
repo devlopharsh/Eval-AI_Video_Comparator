@@ -312,6 +312,10 @@ export function Dashboard() {
         : sessionStatus === "PROCESSING" || sessionStatus === "QUEUED"
           ? "Comparison in progress"
           : "Awaiting submission";
+  const isCompareLoading =
+    isSubmitting ||
+    sessionStatus === "QUEUED" ||
+    sessionStatus === "PROCESSING";
   const strength = getVideoStrength(videos);
   const latestAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant");
   const backendResponse = summarizeBackendResponse(latestAssistantMessage);
@@ -425,13 +429,13 @@ export function Dashboard() {
 
                   <div className="flex flex-col flex-wrap gap-3">
                     <Button
-                      disabled={isSubmitting || isRestoring}
+                      disabled={isCompareLoading || isRestoring}
                       onClick={() => void handleIngest()}
                     >
-                      {isSubmitting ? (
+                      {isCompareLoading ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
-                          Starting...
+                          Comparing...
                         </>
                       ) : (
                         <>Compare</>
@@ -458,12 +462,15 @@ export function Dashboard() {
               <div className="grid gap-5 md:grid-cols-4">
                 {pipelineState.map((step, index) => {
                   const ready = step.state === "ready";
+                  const failed = step.state === "failed";
                   return (
                     <div className="relative" key={step.label}>
                       <div className="flex items-start gap-3 h-23">
                         <div
                           className={`relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors ${
-                            ready
+                            failed
+                              ? "border-red-500 bg-red-500 text-white"
+                              : ready
                               ? "border-emerald-500 bg-emerald-500 text-white"
                               : "border-slate-300 bg-slate-100 text-slate-500"
                           }`}
@@ -471,10 +478,22 @@ export function Dashboard() {
                           {index + 1}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[color:var(--foreground)]">
+                          <div
+                            className={`text-sm font-medium ${
+                              failed
+                                ? "text-red-600"
+                                : "text-[color:var(--foreground)]"
+                            }`}
+                          >
                             {step.label}
                           </div>
-                          <div className="mt-1 text-sm leading-6 text-[color:var(--muted-foreground)]">
+                          <div
+                            className={`mt-1 text-sm leading-6 ${
+                              failed
+                                ? "text-red-500"
+                                : "text-[color:var(--muted-foreground)]"
+                            }`}
+                          >
                             {step.detail}
                           </div>
                         </div>
@@ -483,9 +502,11 @@ export function Dashboard() {
                         <div className="mt-4 block h-1.5 rounded-full bg-slate-300/90">
                           <div
                             className={`h-1.5 rounded-full transition-all duration-500 ${
-                              ready
-                                ? "w-full bg-emerald-500"
-                                : "w-0 bg-emerald-500"
+                              failed
+                                ? "w-full bg-red-500"
+                                : ready
+                                  ? "w-full bg-emerald-500"
+                                  : "w-0 bg-emerald-500"
                             }`}
                           />
                         </div>

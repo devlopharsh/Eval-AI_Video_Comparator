@@ -10,6 +10,10 @@ export function configuration() {
       collection: process.env.QDRANT_COLLECTION ?? "transcript_chunks",
       apiKey: process.env.QDRANT_API_KEY ?? "",
     },
+    transcriptApi: {
+      apiKey: process.env.TRANSCRIPT_API_KEY ?? "",
+      baseUrl: process.env.TRANSCRIPT_API_BASE_URL ?? "https://transcriptapi.com/api/v2",
+    },
     providers: {
       youtubeTranscript: process.env.YOUTUBE_TRANSCRIPT_PROVIDER ?? "",
       instagramIngest: process.env.INSTAGRAM_INGEST_PROVIDER ?? "",

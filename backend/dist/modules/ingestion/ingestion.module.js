@@ -18,6 +18,7 @@ const ingestion_service_1 = require("./ingestion.service");
 const ingestion_shell_service_1 = require("./ingestion-shell.service");
 const instagram_provider_service_1 = require("./instagram-provider.service");
 const openai_whisper_service_1 = require("./openai-whisper.service");
+const transcript_api_service_1 = require("./transcript-api.service");
 const transcript_chunker_service_1 = require("./transcript-chunker.service");
 const video_ingestion_service_1 = require("./video-ingestion.service");
 const youtube_provider_service_1 = require("./youtube-provider.service");
@@ -33,6 +34,7 @@ exports.IngestionModule = IngestionModule = __decorate([
             ingestion_processor_1.IngestionProcessor,
             ingestion_shell_service_1.IngestionShellService,
             openai_whisper_service_1.OpenAiWhisperService,
+            transcript_api_service_1.TranscriptApiService,
             youtube_provider_service_1.YoutubeProviderService,
             instagram_provider_service_1.InstagramProviderService,
             video_ingestion_service_1.VideoIngestionService,

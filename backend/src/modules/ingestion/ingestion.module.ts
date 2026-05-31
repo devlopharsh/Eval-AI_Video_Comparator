@@ -9,6 +9,7 @@ import { IngestionService } from "./ingestion.service";
 import { IngestionShellService } from "./ingestion-shell.service";
 import { InstagramProviderService } from "./instagram-provider.service";
 import { OpenAiWhisperService } from "./openai-whisper.service";
+import { TranscriptApiService } from "./transcript-api.service";
 import { TranscriptChunkerService } from "./transcript-chunker.service";
 import { VideoIngestionService } from "./video-ingestion.service";
 import { YoutubeProviderService } from "./youtube-provider.service";
@@ -21,6 +22,7 @@ import { YoutubeProviderService } from "./youtube-provider.service";
     IngestionProcessor,
     IngestionShellService,
     OpenAiWhisperService,
+    TranscriptApiService,
     YoutubeProviderService,
     InstagramProviderService,
     VideoIngestionService,

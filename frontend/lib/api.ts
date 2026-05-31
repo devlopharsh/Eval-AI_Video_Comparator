@@ -123,7 +123,7 @@ export function createPipelineState(
   pipeline?: SessionResponse["pipeline"],
   latestJob?: SessionResponse["latestJob"],
 ) {
-  const mapState = (state: "ready" | "pending" | "failed" | undefined) => (state === "failed" ? "pending" : state ?? "pending");
+  const mapState = (state: "ready" | "pending" | "failed" | undefined) => state ?? "pending";
   return [
     {
       label: "URL validation",

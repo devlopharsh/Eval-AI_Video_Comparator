@@ -1,9 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { buildSummaryFromTranscript, extractHashtags } from "./ingestion.utils";
 import { IngestionShellService } from "./ingestion-shell.service";
+import { TranscriptApiService } from "./transcript-api.service";
 import type { VideoSeed } from "../../shared/types/ingestion.types";
 
 type YoutubeMetadata = {
@@ -23,11 +25,15 @@ type YoutubeMetadata = {
 export class YoutubeProviderService {
   private readonly logger = new Logger(YoutubeProviderService.name);
 
-  constructor(private readonly shellService: IngestionShellService) {}
+  constructor(
+    private readonly shellService: IngestionShellService,
+    private readonly transcriptApiService: TranscriptApiService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async buildSeed(url: string, side: "A" | "B"): Promise<VideoSeed> {
     const metadata = await this.loadMetadata(url);
-    const transcript = await this.loadTranscriptWithYtDlp(url);
+    const transcript = await this.loadTranscript(url);
 
     return {
       side,
@@ -99,6 +105,27 @@ export class YoutubeProviderService {
           "YouTube blocked anonymous metadata extraction for this video. Configure yt-dlp cookies or test a different video/network.",
         );
       }
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }
+
+  private async loadTranscript(url: string) {
+    const configuredProvider = (this.configService.get<string>("providers.youtubeTranscript") ?? "").trim().toLowerCase();
+
+    if (configuredProvider === "transcriptapi" || this.transcriptApiService.isConfigured()) {
+      return this.loadTranscriptWithTranscriptApi(url);
+    }
+
+    return this.loadTranscriptWithYtDlp(url);
+  }
+
+  private async loadTranscriptWithTranscriptApi(url: string) {
+    try {
+      const result = await this.transcriptApiService.fetchYoutubeTranscript(url);
+      return result.transcript;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      this.logger.error(`TranscriptAPI transcript fetch failed for YouTube: ${message}`);
       throw error instanceof Error ? error : new Error(message);
     }
   }

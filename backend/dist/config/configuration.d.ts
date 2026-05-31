@@ -6,6 +6,7 @@ export declare function configuration(): {
     qdrant: {
         url: string;
         collection: string;
+        apiKey: string;
     };
     providers: {
         youtubeTranscript: string;

@@ -10,6 +10,7 @@ function configuration() {
         qdrant: {
             url: process.env.QDRANT_URL ?? "http://localhost:6333",
             collection: process.env.QDRANT_COLLECTION ?? "transcript_chunks",
+            apiKey: process.env.QDRANT_API_KEY ?? "",
         },
         providers: {
             youtubeTranscript: process.env.YOUTUBE_TRANSCRIPT_PROVIDER ?? "",

@@ -19,6 +19,7 @@ let QdrantService = QdrantService_1 = class QdrantService {
         this.logger = new common_1.Logger(QdrantService_1.name);
         this.baseUrl = this.configService.getOrThrow("qdrant.url");
         this.collection = this.configService.getOrThrow("qdrant.collection");
+        this.apiKey = this.configService.get("qdrant.apiKey") ?? "";
     }
     async ensureCollection(vectorSize) {
         const collectionUrl = `${this.baseUrl}/collections/${this.collection}`;
@@ -34,9 +35,7 @@ let QdrantService = QdrantService_1 = class QdrantService {
         }
         const response = await fetch(collectionUrl, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: this.buildHeaders(),
             body: JSON.stringify({
                 vectors: {
                     size: vectorSize,
@@ -55,9 +54,7 @@ let QdrantService = QdrantService_1 = class QdrantService {
         await this.ensureCollection(chunks[0].vector.length);
         const response = await fetch(`${this.baseUrl}/collections/${this.collection}/points`, {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: this.buildHeaders(),
             body: JSON.stringify({
                 points: chunks.map((chunk) => ({
                     id: chunk.id,
@@ -91,9 +88,7 @@ let QdrantService = QdrantService_1 = class QdrantService {
         }
         const response = await fetch(`${this.baseUrl}/collections/${this.collection}/points/search`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: this.buildHeaders(),
             body: JSON.stringify({
                 vector: input.vector,
                 limit: input.limit,
@@ -122,6 +117,12 @@ let QdrantService = QdrantService_1 = class QdrantService {
         }
         const firstNamedVector = Object.values(vectors)[0];
         return firstNamedVector?.size;
+    }
+    buildHeaders() {
+        return {
+            "Content-Type": "application/json",
+            ...(this.apiKey ? { "api-key": this.apiKey } : {}),
+        };
     }
 };
 exports.QdrantService = QdrantService;

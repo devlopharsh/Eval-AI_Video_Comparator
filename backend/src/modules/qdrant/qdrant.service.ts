@@ -31,10 +31,12 @@ export class QdrantService {
   private readonly logger = new Logger(QdrantService.name);
   private readonly baseUrl: string;
   private readonly collection: string;
+  private readonly apiKey: string;
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl = this.configService.getOrThrow<string>("qdrant.url");
     this.collection = this.configService.getOrThrow<string>("qdrant.collection");
+    this.apiKey = this.configService.get<string>("qdrant.apiKey") ?? "";
   }
 
   async ensureCollection(vectorSize: number) {
@@ -70,9 +72,7 @@ export class QdrantService {
 
     const response = await fetch(collectionUrl, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: this.buildHeaders(),
       body: JSON.stringify({
         vectors: {
           size: vectorSize,
@@ -95,9 +95,7 @@ export class QdrantService {
 
     const response = await fetch(`${this.baseUrl}/collections/${this.collection}/points`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: this.buildHeaders(),
       body: JSON.stringify({
         points: chunks.map((chunk) => ({
           id: chunk.id,
@@ -137,9 +135,7 @@ export class QdrantService {
 
     const response = await fetch(`${this.baseUrl}/collections/${this.collection}/points/search`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: this.buildHeaders(),
       body: JSON.stringify({
         vector: input.vector,
         limit: input.limit,
@@ -187,5 +183,12 @@ export class QdrantService {
 
     const firstNamedVector = Object.values(vectors)[0];
     return firstNamedVector?.size;
+  }
+
+  private buildHeaders() {
+    return {
+      "Content-Type": "application/json",
+      ...(this.apiKey ? { "api-key": this.apiKey } : {}),
+    };
   }
 }

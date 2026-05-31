@@ -4,8 +4,8 @@ export declare class VideosService {
     constructor(prisma: PrismaService);
     getVideoDetails(id: string): Promise<{
         id: string;
-        side: import("@prisma/client").$Enums.VideoSide;
-        platform: import("@prisma/client").$Enums.Platform;
+        side: import(".prisma/client").$Enums.VideoSide;
+        platform: import(".prisma/client").$Enums.Platform;
         title: string;
         creator: string;
         metrics: {

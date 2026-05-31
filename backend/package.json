@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "test": "tsx --test src/**/*.test.ts",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy"
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@nestjs/cli": "11.0.7",
     "@nestjs/testing": "^11.1.24",
+    "@types/express": "^5.0.3",
     "@types/node": "22.15.30",
     "@types/supertest": "^7.2.0",
     "prisma": "6.8.2",

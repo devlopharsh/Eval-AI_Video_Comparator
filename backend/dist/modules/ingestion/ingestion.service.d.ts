@@ -9,7 +9,7 @@ export declare class IngestionService {
     createIngestionSession(body: IngestDto): Promise<{
         success: boolean;
         session_id: string;
-        status: import("@prisma/client").$Enums.SessionStatus;
+        status: import(".prisma/client").$Enums.SessionStatus;
         job_id: string;
         queue_job_id: string | null;
     }>;

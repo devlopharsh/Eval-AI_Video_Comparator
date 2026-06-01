@@ -13,11 +13,17 @@ export class ChatController {
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
 
-    const stream = this.chatService.streamResponse(body.session_id, body.message);
+    try {
+      const stream = this.chatService.streamResponse(body.session_id, body.message);
 
-    for await (const item of stream) {
-      response.write(`event: ${item.event}\n`);
-      response.write(`data: ${JSON.stringify(item.data)}\n\n`);
+      for await (const item of stream) {
+        response.write(`event: ${item.event}\n`);
+        response.write(`data: ${JSON.stringify(item.data)}\n\n`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Chat stream failed.";
+      response.write("event: error\n");
+      response.write(`data: ${JSON.stringify({ message })}\n\n`);
     }
 
     response.end();

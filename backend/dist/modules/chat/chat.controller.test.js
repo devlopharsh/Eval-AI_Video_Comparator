@@ -29,3 +29,14 @@ function createResponseRecorder() {
     strict_1.default.equal(response.writes.some((entry) => entry.includes("event: token")), true);
     strict_1.default.equal(response.writes.some((entry) => entry.includes("event: complete")), true);
 });
+(0, node_test_1.default)("chat controller streams error events when generation fails", async () => {
+    const controller = new chat_controller_1.ChatController({
+        async *streamResponse() {
+            throw new Error("Chat generation failed.");
+        },
+    });
+    const response = createResponseRecorder();
+    await controller.streamChat({ session_id: "session-1", message: "hi" }, response);
+    strict_1.default.equal(response.writes.some((entry) => entry.includes("event: error")), true);
+    strict_1.default.equal(response.writes.some((entry) => entry.includes("Chat generation failed.")), true);
+});

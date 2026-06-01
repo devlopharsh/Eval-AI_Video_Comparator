@@ -46,8 +46,17 @@ let ChatService = class ChatService {
             content: entry.content,
         })), session.videos.map((video) => ({
             side: video.side,
+            platform: video.platform,
+            title: video.title,
             engagementRate: Number(video.engagementRate),
             creator: video.creator,
+            followerCount: video.followerCount,
+            views: video.views,
+            likes: video.likes,
+            comments: video.comments,
+            uploadDate: video.uploadDate,
+            durationSeconds: video.durationSeconds,
+            hashtags: video.hashtags,
             transcriptSummary: video.transcriptSummary,
             chunks: video.chunks,
         })), message);

@@ -10,9 +10,18 @@ export type ConversationTurn = {
 };
 
 export type WorkflowVideo = {
-  side: string;
+  side: "A" | "B";
+  platform: string;
+  title: string;
   engagementRate: number;
   creator: string;
+  followerCount: number;
+  views: number;
+  likes: number;
+  comments: number;
+  uploadDate: Date;
+  durationSeconds: number;
+  hashtags: string[];
   transcriptSummary: string;
   chunks: Array<{ chunkKey: string; timestampStart: number; timestampEnd: number }>;
 };

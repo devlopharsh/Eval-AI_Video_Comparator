@@ -16,6 +16,15 @@ export declare function configuration(): {
         apiKey: string;
         baseUrl: string;
     };
+    transcription: {
+        provider: string;
+        apiKey: string;
+        baseUrl: string;
+        model: string;
+        nvidiaServer: string;
+        nvidiaFunctionId: string;
+        languageCode: string;
+    };
     providers: {
         youtubeTranscript: string;
         instagramIngest: string;

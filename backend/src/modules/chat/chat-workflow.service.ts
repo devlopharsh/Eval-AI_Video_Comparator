@@ -127,7 +127,9 @@ export class ChatWorkflowService {
   }
 
   private routeQuestion(question: string): "metadata" | "retrieval" {
-    return /\b(views|likes|comments|engagement|creator|duration|upload)\b/i.test(question)
+    return /\b(views?|likes?|comments?|engagement|creator|duration|upload|posted|followers?|title|hashtags?)\b/i.test(
+      question,
+    )
       ? "metadata"
       : "retrieval";
   }
@@ -141,11 +143,24 @@ export class ChatWorkflowService {
   }
 
   private buildMetadataContext(videoA: WorkflowVideo, videoB: WorkflowVideo) {
+    const buildVideoBlock = (label: "A" | "B", video: WorkflowVideo) => [
+      `Video ${label} platform: ${video.platform}`,
+      `Video ${label} title: ${video.title}`,
+      `Video ${label} creator: ${video.creator}`,
+      `Video ${label} followers: ${video.followerCount}`,
+      `Video ${label} views: ${video.views}`,
+      `Video ${label} likes: ${video.likes}`,
+      `Video ${label} comments: ${video.comments}`,
+      `Video ${label} engagement rate: ${video.engagementRate}%`,
+      `Video ${label} duration: ${video.durationSeconds} seconds`,
+      `Video ${label} upload date: ${video.uploadDate.toISOString().slice(0, 10)}`,
+      `Video ${label} hashtags: ${video.hashtags.length > 0 ? video.hashtags.join(", ") : "none"}`,
+      `Video ${label} summary: ${video.transcriptSummary}`,
+    ];
+
     return [
-      `Video A engagement rate: ${videoA.engagementRate}%`,
-      `Video A summary: ${videoA.transcriptSummary}`,
-      `Video B engagement rate: ${videoB.engagementRate}%`,
-      `Video B summary: ${videoB.transcriptSummary}`,
+      ...buildVideoBlock("A", videoA),
+      ...buildVideoBlock("B", videoB),
     ].join("\n");
   }
 

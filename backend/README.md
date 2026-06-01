@@ -29,7 +29,7 @@ NestJS backend foundation for the SRS-defined AI video comparison system.
 - provider services for:
   - YouTube metadata via the YouTube Data API plus transcript extraction via TranscriptAPI
   - Instagram metadata via `yt-dlp`
-  - Whisper transcription for Reel audio when an OpenAI-compatible audio transcription endpoint is configured
+  - NVIDIA Riva / Whisper-compatible transcription for Reel audio through a dedicated transcription endpoint
 - transcript chunks are upserted into Qdrant during ingestion
 - retrieval-style chat requests now query Qdrant for chunk evidence
 - chunk indexing and query retrieval share the same embedding provider abstraction, including NVIDIA-compatible `input_type` handling for embeddings
@@ -84,16 +84,38 @@ The backend will then use:
 
 `yt-dlp` remains in the codebase only for Instagram ingestion.
 
+### Instagram / Audio Transcription Path
+
+If you want Instagram Reel transcription while keeping NVIDIA for chat and embeddings, the backend now supports NVIDIA Riva-hosted ASR directly:
+
+```env
+TRANSCRIPTION_PROVIDER=nvidia
+TRANSCRIPTION_API_KEY=<your-nvidia-key>
+TRANSCRIPTION_BASE_URL=https://integrate.api.nvidia.com/v1
+TRANSCRIPTION_MODEL=whisper-large-v3
+TRANSCRIPTION_NVIDIA_SERVER=grpc.nvcf.nvidia.com:443
+TRANSCRIPTION_NVIDIA_FUNCTION_ID=b702f636-f60c-4a3d-a6f4-f3568c13bd7d
+TRANSCRIPTION_LANGUAGE_CODE=multi
+```
+
+The Docker image now installs the NVIDIA Riva Python client and shells out to a small helper script for offline transcription. If you prefer a Whisper-compatible HTTP provider instead, set `TRANSCRIPTION_PROVIDER=http` and point `TRANSCRIPTION_BASE_URL` to a provider that supports `/audio/transcriptions`.
+
 ## Local Non-Docker Run
 
 If you still want to run it manually outside Docker:
 
 1. Start infrastructure with `docker compose up -d postgres redis qdrant`.
 2. Install dependencies with `pnpm install`.
-3. Generate Prisma client with `pnpm prisma:generate`.
-4. Run migrations with `pnpm prisma:migrate`.
-5. Start the backend with `pnpm dev`.
-6. Run workflow tests with `pnpm test`.
+3. Install the Python NVIDIA ASR dependency if you are using `TRANSCRIPTION_PROVIDER=nvidia`:
+
+```powershell
+python -m pip install nvidia-riva-client
+```
+
+4. Generate Prisma client with `pnpm prisma:generate`.
+5. Run migrations with `pnpm prisma:migrate`.
+6. Start the backend with `pnpm dev`.
+7. Run workflow tests with `pnpm test`.
 
 Default server URL: `http://localhost:4000`
 
@@ -138,6 +160,6 @@ Use one of the video IDs saved under the session.
 - Instagram ingestion still depends on external `yt-dlp` availability
 - YouTube ingestion now requires both a YouTube Data API key and a TranscriptAPI key
 - NVIDIA-compatible chat and embeddings activate automatically once `OPENAI_API_KEY` is present and pointed at `https://integrate.api.nvidia.com/v1`
-- transcription is still not wired to a NVIDIA-compatible ASR endpoint in this codebase
+- NVIDIA ASR now depends on Python plus `nvidia-riva-client`, which are installed in the Docker image but still need to be present for manual non-Docker runs
 - if metadata, transcript extraction, embeddings, or chat generation fail, the session now fails instead of substituting fake data
 - full end-to-end API integration tests are still not implemented yet

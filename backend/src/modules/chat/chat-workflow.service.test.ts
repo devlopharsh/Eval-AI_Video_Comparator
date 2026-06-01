@@ -28,6 +28,15 @@ class FakeEmbeddingService {
 }
 
 class FakeOpenAiGenerationService {
+  public lastInput:
+    | {
+        route: "metadata" | "retrieval";
+        retrievedContext: string;
+        metadataContext: string;
+        citations: Array<{ chunkId: string }>;
+      }
+    | undefined;
+
   getModel() {
     return "gpt-4o-mini";
   }
@@ -38,22 +47,44 @@ class FakeOpenAiGenerationService {
     metadataContext: string;
     citations: Array<{ chunkId: string }>;
   }) {
+    this.lastInput = input;
     return `${input.route}|${input.citations.length}|${input.retrievedContext ? "ctx" : "noctx"}|${input.metadataContext.includes("Video A") ? "meta" : "nometa"}`;
   }
 }
 
+const uploadDateA = new Date("2026-05-01T00:00:00.000Z");
+const uploadDateB = new Date("2026-05-02T00:00:00.000Z");
+
 const videos = [
   {
-    side: "A",
+    side: "A" as const,
+    platform: "YOUTUBE",
+    title: "How we doubled retention",
     engagementRate: 9.17,
     creator: "Northwind Growth",
+    followerCount: 120000,
+    views: 540000,
+    likes: 41000,
+    comments: 1200,
+    uploadDate: uploadDateA,
+    durationSeconds: 42,
+    hashtags: ["#marketing", "#retention"],
     transcriptSummary: "Immediate quantified hook.",
     chunks: [{ chunkKey: "A_1", timestampStart: 0, timestampEnd: 8 }],
   },
   {
-    side: "B",
+    side: "B" as const,
+    platform: "INSTAGRAM",
+    title: "A slower storytelling intro",
     engagementRate: 6.37,
     creator: "Studio Switch",
+    followerCount: 87000,
+    views: 220000,
+    likes: 14000,
+    comments: 320,
+    uploadDate: uploadDateB,
+    durationSeconds: 35,
+    hashtags: ["#storytelling"],
     transcriptSummary: "Delayed payoff in the opening.",
     chunks: [{ chunkKey: "B_1", timestampStart: 0, timestampEnd: 6 }],
   },
@@ -61,10 +92,11 @@ const videos = [
 
 test("workflow routes metadata questions without Qdrant retrieval", async () => {
   const qdrant = new FakeQdrantService();
+  const generation = new FakeOpenAiGenerationService();
   const service = new ChatWorkflowService(
     qdrant as never,
     new FakeEmbeddingService() as never,
-    new FakeOpenAiGenerationService() as never,
+    generation as never,
   );
 
   const result = await service.runComparisonWorkflow("session-1", [], [...videos], "Which creator has higher engagement?");
@@ -73,6 +105,10 @@ test("workflow routes metadata questions without Qdrant retrieval", async () => 
   assert.equal(result.model, "gpt-4o-mini");
   assert.equal(qdrant.queries.length, 0);
   assert.equal(result.citations.length, 2);
+  assert.match(generation.lastInput?.metadataContext ?? "", /Video A views: 540000/);
+  assert.match(generation.lastInput?.metadataContext ?? "", /Video B likes: 14000/);
+  assert.match(generation.lastInput?.metadataContext ?? "", /Video A upload date: 2026-05-01/);
+  assert.match(generation.lastInput?.metadataContext ?? "", /Video B hashtags: #storytelling/);
 });
 
 test("workflow routes retrieval questions through Qdrant and builds citations", async () => {
@@ -90,4 +126,18 @@ test("workflow routes retrieval questions through Qdrant and builds citations", 
   assert.equal(result.citations.length, 1);
   assert.equal(result.citations[0].chunkId, "A_1");
   assert.match(result.message, /ctx/);
+});
+
+test("workflow routes likes questions to metadata", async () => {
+  const qdrant = new FakeQdrantService();
+  const service = new ChatWorkflowService(
+    qdrant as never,
+    new FakeEmbeddingService() as never,
+    new FakeOpenAiGenerationService() as never,
+  );
+
+  const result = await service.runComparisonWorkflow("session-3", [], [...videos], "Which video got more likes?");
+
+  assert.equal(result.route, "metadata");
+  assert.equal(qdrant.queries.length, 0);
 });

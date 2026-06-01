@@ -20,6 +20,15 @@ function configuration() {
             apiKey: process.env.TRANSCRIPT_API_KEY ?? "",
             baseUrl: process.env.TRANSCRIPT_API_BASE_URL ?? "https://transcriptapi.com/api/v2",
         },
+        transcription: {
+            provider: process.env.TRANSCRIPTION_PROVIDER ?? "",
+            apiKey: process.env.TRANSCRIPTION_API_KEY ?? "",
+            baseUrl: process.env.TRANSCRIPTION_BASE_URL ?? "",
+            model: process.env.TRANSCRIPTION_MODEL ?? "whisper-1",
+            nvidiaServer: process.env.TRANSCRIPTION_NVIDIA_SERVER ?? "grpc.nvcf.nvidia.com:443",
+            nvidiaFunctionId: process.env.TRANSCRIPTION_NVIDIA_FUNCTION_ID ?? "b702f636-f60c-4a3d-a6f4-f3568c13bd7d",
+            languageCode: process.env.TRANSCRIPTION_LANGUAGE_CODE ?? "multi",
+        },
         providers: {
             youtubeTranscript: process.env.YOUTUBE_TRANSCRIPT_PROVIDER ?? "",
             instagramIngest: process.env.INSTAGRAM_INGEST_PROVIDER ?? "",

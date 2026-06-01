@@ -33,3 +33,21 @@ test("chat controller streams token and completion events", async () => {
   assert.equal(response.writes.some((entry) => entry.includes("event: token")), true);
   assert.equal(response.writes.some((entry) => entry.includes("event: complete")), true);
 });
+
+test("chat controller streams error events when generation fails", async () => {
+  const controller = new ChatController({
+    async *streamResponse() {
+      throw new Error("Chat generation failed.");
+    },
+  } as never);
+
+  const response = createResponseRecorder();
+
+  await controller.streamChat(
+    { session_id: "session-1", message: "hi" },
+    response as never,
+  );
+
+  assert.equal(response.writes.some((entry) => entry.includes("event: error")), true);
+  assert.equal(response.writes.some((entry) => entry.includes("Chat generation failed.")), true);
+});

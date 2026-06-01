@@ -64,6 +64,22 @@ export type ChatCompletePayload = {
   citations: Citation[];
 };
 
+type ChatErrorPayload = {
+  message: string;
+};
+
+function isChatCompletePayload(payload: unknown): payload is ChatCompletePayload {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  return "message" in payload && "route" in payload && "model" in payload && "citations" in payload;
+}
+
+function isChatErrorPayload(payload: unknown): payload is ChatErrorPayload {
+  return Boolean(payload && typeof payload === "object" && "message" in payload);
+}
+
 function formatCompactNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
@@ -263,6 +279,7 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = "";
   let currentEvent = "message";
+  let sawComplete = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -294,16 +311,26 @@ export async function streamChat(
 
       const payload = JSON.parse(data) as
         | { token: string }
-        | ChatCompletePayload;
+        | ChatCompletePayload
+        | ChatErrorPayload;
 
       if (currentEvent === "token" && "token" in payload) {
         handlers.onToken(payload.token);
       }
 
-      if (currentEvent === "complete" && "message" in payload) {
+      if (currentEvent === "complete" && isChatCompletePayload(payload)) {
+        sawComplete = true;
         handlers.onComplete(payload);
       }
+
+      if (currentEvent === "error" && isChatErrorPayload(payload)) {
+        throw new Error(payload.message);
+      }
     }
+  }
+
+  if (!sawComplete) {
+    throw new Error("Chat stream ended before a response was completed.");
   }
 }
 

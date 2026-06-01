@@ -27,6 +27,7 @@ export declare class QdrantService {
     private readonly baseUrl;
     private readonly collection;
     private readonly apiKey;
+    private readonly requiredKeywordIndexes;
     constructor(configService: ConfigService);
     ensureCollection(vectorSize: number): Promise<void>;
     upsertTranscriptChunks(chunks: UpsertChunkInput[]): Promise<void>;
@@ -36,6 +37,8 @@ export declare class QdrantService {
         payload: QdrantPayload | undefined;
     }[]>;
     private extractVectorSize;
+    private ensurePayloadIndexes;
+    private ensureKeywordPayloadIndex;
     private buildHeaders;
 }
 export {};

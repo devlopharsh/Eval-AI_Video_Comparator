@@ -32,6 +32,7 @@ export class QdrantService {
   private readonly baseUrl: string;
   private readonly collection: string;
   private readonly apiKey: string;
+  private readonly requiredKeywordIndexes = ["sessionId", "side"] as const;
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl = this.configService.getOrThrow<string>("qdrant.url");
@@ -69,6 +70,7 @@ export class QdrantService {
         );
       }
 
+      await this.ensurePayloadIndexes();
       return;
     }
 
@@ -91,11 +93,14 @@ export class QdrantService {
       const detail = await response.text();
       if (response.status === 409 || detail.includes("already exists")) {
         this.logger.warn(`Qdrant collection "${this.collection}" already exists; continuing.`);
+        await this.ensurePayloadIndexes();
         return;
       }
 
       throw new Error(`Failed to create Qdrant collection: ${detail}`);
     }
+
+    await this.ensurePayloadIndexes();
   }
 
   async upsertTranscriptChunks(chunks: UpsertChunkInput[]) {
@@ -195,6 +200,27 @@ export class QdrantService {
 
     const firstNamedVector = Object.values(vectors)[0];
     return firstNamedVector?.size;
+  }
+
+  private async ensurePayloadIndexes() {
+    for (const fieldName of this.requiredKeywordIndexes) {
+      await this.ensureKeywordPayloadIndex(fieldName);
+    }
+  }
+
+  private async ensureKeywordPayloadIndex(fieldName: (typeof this.requiredKeywordIndexes)[number]) {
+    const response = await fetch(`${this.baseUrl}/collections/${this.collection}/index`, {
+      method: "PUT",
+      headers: this.buildHeaders(),
+      body: JSON.stringify({
+        field_name: fieldName,
+        field_schema: "keyword",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to ensure Qdrant payload index for "${fieldName}": ${await response.text()}`);
+    }
   }
 
   private buildHeaders() {

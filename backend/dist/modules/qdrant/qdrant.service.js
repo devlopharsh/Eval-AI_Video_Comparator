@@ -17,6 +17,7 @@ let QdrantService = QdrantService_1 = class QdrantService {
     constructor(configService) {
         this.configService = configService;
         this.logger = new common_1.Logger(QdrantService_1.name);
+        this.requiredKeywordIndexes = ["sessionId", "side"];
         this.baseUrl = this.configService.getOrThrow("qdrant.url");
         this.collection = this.configService.getOrThrow("qdrant.collection");
         this.apiKey = this.configService.get("qdrant.apiKey") ?? "";
@@ -33,6 +34,7 @@ let QdrantService = QdrantService_1 = class QdrantService {
             if (typeof existingSize === "number" && existingSize !== vectorSize) {
                 throw new Error(`Qdrant collection "${this.collection}" expects vectors of dimension ${existingSize}, but received ${vectorSize}. Recreate the collection or align the configured embedding model dimension.`);
             }
+            await this.ensurePayloadIndexes();
             return;
         }
         if (existing.status !== 404) {
@@ -52,10 +54,12 @@ let QdrantService = QdrantService_1 = class QdrantService {
             const detail = await response.text();
             if (response.status === 409 || detail.includes("already exists")) {
                 this.logger.warn(`Qdrant collection "${this.collection}" already exists; continuing.`);
+                await this.ensurePayloadIndexes();
                 return;
             }
             throw new Error(`Failed to create Qdrant collection: ${detail}`);
         }
+        await this.ensurePayloadIndexes();
     }
     async upsertTranscriptChunks(chunks) {
         if (chunks.length === 0) {
@@ -127,6 +131,24 @@ let QdrantService = QdrantService_1 = class QdrantService {
         }
         const firstNamedVector = Object.values(vectors)[0];
         return firstNamedVector?.size;
+    }
+    async ensurePayloadIndexes() {
+        for (const fieldName of this.requiredKeywordIndexes) {
+            await this.ensureKeywordPayloadIndex(fieldName);
+        }
+    }
+    async ensureKeywordPayloadIndex(fieldName) {
+        const response = await fetch(`${this.baseUrl}/collections/${this.collection}/index`, {
+            method: "PUT",
+            headers: this.buildHeaders(),
+            body: JSON.stringify({
+                field_name: fieldName,
+                field_schema: "keyword",
+            }),
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to ensure Qdrant payload index for "${fieldName}": ${await response.text()}`);
+        }
     }
     buildHeaders() {
         return {

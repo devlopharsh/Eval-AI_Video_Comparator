@@ -23,7 +23,9 @@ let QdrantService = QdrantService_1 = class QdrantService {
     }
     async ensureCollection(vectorSize) {
         const collectionUrl = `${this.baseUrl}/collections/${this.collection}`;
-        const existing = await fetch(collectionUrl);
+        const existing = await fetch(collectionUrl, {
+            headers: this.buildHeaders(),
+        });
         if (existing.ok) {
             const payload = (await existing.json());
             const configuredVectors = payload.result?.config?.params?.vectors;
@@ -32,6 +34,9 @@ let QdrantService = QdrantService_1 = class QdrantService {
                 throw new Error(`Qdrant collection "${this.collection}" expects vectors of dimension ${existingSize}, but received ${vectorSize}. Recreate the collection or align the configured embedding model dimension.`);
             }
             return;
+        }
+        if (existing.status !== 404) {
+            throw new Error(`Failed to inspect Qdrant collection: ${await existing.text()}`);
         }
         const response = await fetch(collectionUrl, {
             method: "PUT",
@@ -44,7 +49,12 @@ let QdrantService = QdrantService_1 = class QdrantService {
             }),
         });
         if (!response.ok) {
-            throw new Error(`Failed to create Qdrant collection: ${await response.text()}`);
+            const detail = await response.text();
+            if (response.status === 409 || detail.includes("already exists")) {
+                this.logger.warn(`Qdrant collection "${this.collection}" already exists; continuing.`);
+                return;
+            }
+            throw new Error(`Failed to create Qdrant collection: ${detail}`);
         }
     }
     async upsertTranscriptChunks(chunks) {

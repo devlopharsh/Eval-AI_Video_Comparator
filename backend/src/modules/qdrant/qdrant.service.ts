@@ -41,7 +41,9 @@ export class QdrantService {
 
   async ensureCollection(vectorSize: number) {
     const collectionUrl = `${this.baseUrl}/collections/${this.collection}`;
-    const existing = await fetch(collectionUrl);
+    const existing = await fetch(collectionUrl, {
+      headers: this.buildHeaders(),
+    });
 
     if (existing.ok) {
       const payload = (await existing.json()) as {
@@ -70,6 +72,10 @@ export class QdrantService {
       return;
     }
 
+    if (existing.status !== 404) {
+      throw new Error(`Failed to inspect Qdrant collection: ${await existing.text()}`);
+    }
+
     const response = await fetch(collectionUrl, {
       method: "PUT",
       headers: this.buildHeaders(),
@@ -82,7 +88,13 @@ export class QdrantService {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to create Qdrant collection: ${await response.text()}`);
+      const detail = await response.text();
+      if (response.status === 409 || detail.includes("already exists")) {
+        this.logger.warn(`Qdrant collection "${this.collection}" already exists; continuing.`);
+        return;
+      }
+
+      throw new Error(`Failed to create Qdrant collection: ${detail}`);
     }
   }
 
